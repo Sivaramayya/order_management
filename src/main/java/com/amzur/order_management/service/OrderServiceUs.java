@@ -1,8 +1,6 @@
 package com.amzur.order_management.service;
 
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
@@ -16,18 +14,19 @@ import com.amzur.order_management.entities.LineItemEntity;
 import com.amzur.order_management.entities.OrderEntity;
 import com.amzur.order_management.repository.LineItemRepository;
 import com.amzur.order_management.repository.OrderRepository;
-@Profile("in")
+@Profile("us")
 @Service
-public class OrderServiceImpl implements OrderService{
+public class OrderServiceUs {
+
 	@Autowired
     private OrderRepository orderRepository;
     @Autowired
     private LineItemRepository lineItemRepository;
-	@Override
+	
 	public OrderResponse createOrder(OrderRequest orderRequest) {
 OrderEntity orderEntity = new OrderEntity();
-		orderRequest.setOrderDate(LocalDate.now());
-//		orderEntity.setUserId(orderRequest.getUserId());
+		
+		orderEntity.setUserId(orderRequest.getUserId());
 		BeanUtils.copyProperties(orderRequest, orderEntity);
 		orderEntity = orderRepository.save(orderEntity);
 		final Long orderId = orderEntity.getOrderId();
@@ -47,13 +46,13 @@ OrderEntity orderEntity = new OrderEntity();
 	
 	
 
-	@Override
+	
 	public List<OrderResponse> getOrderById(Long orderId) {
 		return lineItemRepository.findByOrderId(orderId).stream().map(this::convertEntitytoResponses).collect(Collectors.toList());
 		
 	}
 		
-	@Override
+
 	public List<OrderResponse> getAllOrdersByUserId(Long userId) {
 
 		return orderRepository.findByUserId(userId).stream().map(this::convertEntityToResponse).collect(Collectors.toList());
@@ -69,18 +68,5 @@ OrderEntity orderEntity = new OrderEntity();
 		BeanUtils.copyProperties(lineItemEntity, orderResponse);
 		return orderResponse;
 	}
-	public Map<Long,Long>getOrderCountsByUser(LocalDate orderDate){
-		List<OrderEntity>orders=orderRepository.findAllByOrderDate(orderDate);
-		return orders.stream().collect(Collectors.groupingBy(OrderEntity::getUserId,Collectors.counting()));
-	}
-	public Long getUserWithMaxOrders(LocalDate orderDate) {
-		Map<Long,Long>orderCountsByUser=getOrderCountsByUser(orderDate);
-		return orderCountsByUser.entrySet()
-				.stream()
-				.max(Map.Entry.comparingByValue())
-				.map(Map.Entry::getKey)
-				.orElse(null);
-	}
-
 
 }
