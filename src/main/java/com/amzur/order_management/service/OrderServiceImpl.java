@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.amzur.order_management.dto.request.OrderRequest;
 import com.amzur.order_management.dto.response.OrderResponse;
@@ -23,6 +24,7 @@ public class OrderServiceImpl implements OrderService{
     @Autowired
     private LineItemRepository lineItemRepository;
 	@Override
+	@Transactional
 	public OrderResponse createOrder(OrderRequest orderRequest) {
 OrderEntity orderEntity = new OrderEntity();
 		
