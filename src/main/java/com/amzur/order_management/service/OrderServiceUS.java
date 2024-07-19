@@ -29,14 +29,20 @@ public class OrderServiceUS implements OrderService{
     @Autowired
     private LineItemRepository lineItemRepository;
 	@Override
-	@Async("taskExecutor")
 	public CompletableFuture<OrderResponse> createOrder(OrderRequest orderRequest) {
-		OrderEntity orderEntity = new OrderEntity();
-		BeanUtils.copyProperties(orderRequest, orderEntity);
+    	OrderEntity orderEntity = new OrderEntity();
+		orderRequest.setOrderDate(LocalDate.now());
+	    BeanUtils.copyProperties(orderRequest, orderEntity);
 		orderEntity = orderRepository.save(orderEntity);
-		List<LineItemEntity> lineItems = lineItemRepository.findByOrderId(orderEntity.getOrderId());
-        OrderResponse orderResponse = toOrderResponse(orderEntity, lineItems);
-        return CompletableFuture.completedFuture(orderResponse);
+		final Long orderId = orderEntity.getOrderId();
+		 List<LineItemEntity> lineItems = orderRequest.getBookIds().stream().map(bookId -> {
+	            LineItemEntity lineItem = new LineItemEntity();
+	            lineItem.setOrderId(orderId);
+	            lineItem.setBookId(bookId);
+	            return lineItemRepository.save(lineItem);
+	        }).collect(Collectors.toList());
+		 OrderResponse orderResponse =toOrderResponse(orderEntity, lineItems);
+		 return CompletableFuture.completedFuture(orderResponse);
 	}
 //		//orderEntity.setUserId(orderRequest.getUserId());			
 //		final Long orderId = orderEntity.getOrderId();

@@ -26,6 +26,8 @@ public class OrderEntity {
     @Column(name = "order_date")
     private LocalDate orderDate;
     
+    
+    
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<LineItemEntity> lineItems;
 
