@@ -1,7 +1,7 @@
 package com.amzur.order_management.controller;
 
-import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,24 +21,20 @@ public class OrderController {
 	    private OrderService orderService;
 
 	    // Create an order: POST http://localhost:8080/orders
-	    @PostMapping
-	    public OrderResponse createOrder(@RequestBody OrderRequest orderRequest) {
-	    	//System.out.println("Book IDs:"+ orderRequest.getBookIds());
+	 @PostMapping
+	    public CompletableFuture<OrderResponse> createOrder(@RequestBody OrderRequest orderRequest) {
 	        return orderService.createOrder(orderRequest);
 	    }
 	    
 	    
 	    @GetMapping("/{orderId}")
-	    public List<OrderResponse> getOrderById(@PathVariable Long orderId) {
+	    public CompletableFuture<List<OrderResponse>> getOrderById(@PathVariable Long orderId) {
 	    	
 	        return orderService.getOrderById(orderId);
 	    }
 	    @GetMapping("/userId/{userId}")
-	    public List<OrderResponse> getAllOrdersByUserId(@PathVariable Long userId) {
+	    public  CompletableFuture<List<OrderResponse>> getAllOrdersByUserId(@PathVariable Long userId) {
 	    	return orderService.getAllOrdersByUserId(userId);
 	    }
-	    @GetMapping("/count/{date}")
-	    public Long getUserWithMaxOrders(@PathVariable LocalDate date) {
-	    	return orderService.getUserWithMaxOrders(date);
-	    }
+	    
 }
