@@ -11,5 +11,7 @@ import com.amzur.order_management.entities.LineItemEntity;
 public interface LineItemRepository extends JpaRepository<LineItemEntity, Long>{
 
 	public List<LineItemEntity> findByOrderId(Long orderId);
+
+	public void deleteByOrderId(Long orderId);
 	
 }

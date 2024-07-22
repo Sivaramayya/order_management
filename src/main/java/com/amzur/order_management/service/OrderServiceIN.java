@@ -12,13 +12,17 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.amzur.order_management.constants.ApplicationConstants;
 import com.amzur.order_management.dto.request.OrderRequest;
 import com.amzur.order_management.dto.response.LineItemResponse;
 import com.amzur.order_management.dto.response.OrderResponse;
 import com.amzur.order_management.entities.LineItemEntity;
 import com.amzur.order_management.entities.OrderEntity;
+import com.amzur.order_management.handler.ResourceNotAvailable;
 import com.amzur.order_management.repository.LineItemRepository;
 import com.amzur.order_management.repository.OrderRepository;
+
+import jakarta.transaction.Transactional;
 
 
 @Profile("in")
@@ -33,6 +37,7 @@ public class OrderServiceIN implements OrderService{
     
     @Override
     @Async("taskExecutor")
+    @Transactional
 	public CompletableFuture<OrderResponse> createOrder(OrderRequest orderRequest) {
     	OrderEntity orderEntity = new OrderEntity();
 		orderRequest.setOrderDate(LocalDate.now());
@@ -59,13 +64,41 @@ public class OrderServiceIN implements OrderService{
 		return CompletableFuture.completedFuture(orderResponse);
 	}
 	
-	
+    @Async("taskExecutor")
+    @Transactional
+   	public CompletableFuture<OrderResponse> updateOrder(OrderRequest orderRequest) {
+    	OrderEntity orderEntity = orderRepository.findById(orderRequest.getOrderId())
+                .orElseThrow(() -> new ResourceNotAvailable(ApplicationConstants.RESOURCE_NOT_FOUND));
+       	
+   		orderRequest.setOrderDate(LocalDate.now());
+   	    BeanUtils.copyProperties(orderRequest, orderEntity);
+   		orderEntity = orderRepository.save(orderEntity);
+   		lineItemRepository.deleteByOrderId(orderRequest.getOrderId());
+   		final Long orderId = orderEntity.getOrderId();
+   		 List<LineItemEntity> lineItems = orderRequest.getBookIds().stream().map(bookId -> {
+   	            LineItemEntity lineItem = new LineItemEntity();
+   	            lineItem.setOrderId(orderId);
+   	            lineItem.setBookId(bookId);
+   	            return lineItemRepository.save(lineItem);
+   	        }).collect(Collectors.toList());
+   		
+
+   		OrderResponse orderResponse =toOrderResponse(orderEntity, lineItems);
+   	
+   		
+   		return CompletableFuture.completedFuture(orderResponse);
+   	}
 
     @Override
    	@Async("taskExecutor")
-   	public CompletableFuture<List<OrderResponse>> getOrderById(Long orderId) {
-   		return CompletableFuture.completedFuture(lineItemRepository.findByOrderId(orderId).stream().map(this::convertEntitytoResponses).collect(Collectors.toList()));		
-   	}
+    public CompletableFuture<OrderResponse> getOrderById(Long orderId) {
+        OrderEntity orderEntity = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotAvailable(ApplicationConstants.RESOURCE_NOT_FOUND));
+        
+        List<LineItemEntity> lineItems = lineItemRepository.findByOrderId(orderId);
+        OrderResponse orderResponse = toOrderResponse(orderEntity, lineItems);
+        return CompletableFuture.completedFuture(orderResponse);
+    }
 		
     @Override
 	@Async("taskExecutor")
@@ -76,18 +109,7 @@ public class OrderServiceIN implements OrderService{
             return toOrderResponse(order, lineItems);}).collect(Collectors.toList()));			
 	}
 
-	public OrderResponse convertEntityToResponse(OrderEntity orderEntity) {
-		OrderResponse orderResponse=new OrderResponse();
-		BeanUtils.copyProperties(orderEntity, orderResponse);
-		return orderResponse;
-	}
-	public OrderResponse convertEntitytoResponses(LineItemEntity lineItemEntity) {
-		OrderResponse orderResponse=new OrderResponse();
-		BeanUtils.copyProperties(lineItemEntity, orderResponse);
-		return orderResponse;
-	}
 
-	
 	private OrderResponse toOrderResponse(OrderEntity orderEntity, List<LineItemEntity> lineItems) {
         OrderResponse orderResponse = new OrderResponse();
         BeanUtils.copyProperties(orderEntity, orderResponse);
