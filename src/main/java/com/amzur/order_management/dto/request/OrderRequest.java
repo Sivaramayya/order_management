@@ -6,7 +6,9 @@ import java.util.List;
 import jakarta.validation.constraints.NotNull;
 
 public class OrderRequest {
-	 @NotNull
+	 
+	private Long orderId;
+	@NotNull
 	    private Long userId;
 	    @NotNull
 	    private List<Integer> bookIds;
@@ -29,6 +31,12 @@ public class OrderRequest {
 		}
 		public void setOrderDate(LocalDate orderDate) {
 			this.orderDate = orderDate;
+		}
+		public Long getOrderId() {
+			return orderId;
+		}
+		public void setOrderId(Long orderId) {
+			this.orderId = orderId;
 		}
 	    
 	    
